@@ -1,0 +1,7 @@
+{
+  "name": "BusFlow Admin Portal",
+  "description": "A high-performance command center for managing luxury bus bookings, owner verifications, conflict resolutions, and automated replacement engines.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

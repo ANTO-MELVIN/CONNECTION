@@ -1,0 +1,7 @@
+{
+  "name": "Connections - Travel Owner Portal",
+  "description": "A comprehensive bus management platform for travel agency owners to manage fleets, bookings, and availability.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

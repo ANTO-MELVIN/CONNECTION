@@ -1,0 +1,7 @@
+{
+  "name": "CONNECTIONS - Premium Boutique Bus Booking",
+  "description": "Premium boutique bus platform with state-of-the-art lighting and sound systems. Discover and book high-end party and luxury buses.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
