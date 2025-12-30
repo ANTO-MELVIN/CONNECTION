@@ -3,6 +3,11 @@ const createApp = require('./app');
 const { initSocket } = require('./lib/socket');
 
 const app = createApp();
+
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
+});
+
 const PORT = process.env.PORT || 8080;
 
 const server = app.listen(PORT, () => {
