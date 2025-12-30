@@ -1,4 +1,4 @@
-import type { AppUser, DashboardSummary, OwnerProfile } from '../types';
+import type { AppUser, DashboardSummary, OwnerProfile, AdminPendingBus } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api';
 
@@ -41,5 +41,33 @@ export async function approveOwner(ownerId: string, token: string) {
     headers: {
       Authorization: `Bearer ${token}`,
     },
+  });
+}
+
+export async function fetchPendingBuses(token: string) {
+  return request<AdminPendingBus[]>(`${API_URL}/admin/buses/pending`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function approveBus(busId: string, token: string, note?: string) {
+  return request<AdminPendingBus>(`${API_URL}/admin/buses/${busId}/approve`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(note ? { note } : {}),
+  });
+}
+
+export async function rejectBus(busId: string, token: string, note?: string) {
+  return request<AdminPendingBus>(`${API_URL}/admin/buses/${busId}/reject`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(note ? { note } : {}),
   });
 }

@@ -7,5 +7,8 @@ const router = express.Router();
 router.use(authenticate, authorizeRoles('ADMIN'));
 router.post('/owners/:ownerId/approve', adminController.approveOwner);
 router.get('/summary', adminController.getSummary);
+router.get('/buses/pending', adminController.listPendingBuses);
+router.post('/buses/:busId/approve', adminController.approveBus);
+router.post('/buses/:busId/reject', adminController.rejectBus);
 
 module.exports = router;

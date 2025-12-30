@@ -50,6 +50,39 @@ export interface Bus {
   registrationNumber: string;
 }
 
+export interface AdminPendingBus {
+  id: string;
+  title: string;
+  registrationNo: string;
+  capacity: number;
+  description?: string | null;
+  amenities: string[];
+  imageUrl?: string | null;
+  approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+  approvalNote?: string | null;
+  active: boolean;
+  media?: AdminBusMedia[];
+  owner: {
+    id: string;
+    companyName: string;
+    user?: {
+      firstName?: string | null;
+      lastName?: string | null;
+      email?: string | null;
+    } | null;
+  };
+}
+
+export interface AdminBusMedia {
+  id: string;
+  busId: string;
+  fileName: string;
+  mimeType: string;
+  kind: 'IMAGE' | 'VIDEO';
+  url?: string | null;
+  data?: string | null;
+}
+
 export interface Booking {
   id: string;
   busId: string;

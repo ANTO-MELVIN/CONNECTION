@@ -19,7 +19,41 @@ async function getSummary(req, res, next) {
   }
 }
 
+async function listPendingBuses(req, res, next) {
+  try {
+    const buses = await adminService.listPendingBuses();
+    res.json(buses);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function approveBus(req, res, next) {
+  try {
+    const { busId } = req.params;
+    const { note } = req.body ?? {};
+    const bus = await adminService.approveBus(busId, req.user.id, note);
+    res.json(bus);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function rejectBus(req, res, next) {
+  try {
+    const { busId } = req.params;
+    const { note } = req.body ?? {};
+    const bus = await adminService.rejectBus(busId, req.user.id, note);
+    res.json(bus);
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   approveOwner,
   getSummary,
+  listPendingBuses,
+  approveBus,
+  rejectBus,
 };

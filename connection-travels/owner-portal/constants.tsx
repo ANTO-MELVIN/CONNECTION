@@ -1,31 +1,30 @@
 
-import { Bus, BusStatus, Booking, BookingStatus } from './types';
+import type { OwnerBus, Booking } from './types';
+import { BookingStatus } from './types';
 
-export const MOCK_BUSES: Bus[] = [
+export const MOCK_BUSES: OwnerBus[] = [
   {
     id: 'BUS001',
-    name: 'Royal Voyager',
-    regNumber: 'KA 01 AB 1234',
+    title: 'Royal Voyager',
+    registrationNo: 'KA 01 AB 1234',
     capacity: 45,
-    type: 'Luxury',
-    basePrice: 15000,
-    city: 'Bangalore',
-    routes: ['Bangalore - Coorg', 'Bangalore - Mysore'],
-    features: ['AC', 'LED lights', 'Sound system', 'Sleeper'],
-    status: BusStatus.APPROVED,
+    description: 'Premium luxury bus with lounge seating.',
+    amenities: ['AC', 'LED lights', 'Sound system', 'Sleeper'],
+    approvalStatus: 'APPROVED',
+    approvalNote: null,
+    active: true,
     imageUrl: 'https://picsum.photos/seed/bus1/400/250'
   },
   {
     id: 'BUS002',
-    name: 'Neon Party King',
-    regNumber: 'KA 01 CD 5678',
+    title: 'Neon Party King',
+    registrationNo: 'KA 01 CD 5678',
     capacity: 35,
-    type: 'DJ',
-    basePrice: 18000,
-    city: 'Bangalore',
-    routes: ['City Tour', 'Night Out'],
-    features: ['DJ system', 'LED lights', 'Sound system'],
-    status: BusStatus.PENDING,
+    description: 'Party-ready coach built for city tours.',
+    amenities: ['DJ system', 'LED lights', 'Sound system'],
+    approvalStatus: 'PENDING',
+    approvalNote: null,
+    active: false,
     imageUrl: 'https://picsum.photos/seed/bus2/400/250'
   }
 ];

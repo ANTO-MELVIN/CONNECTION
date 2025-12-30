@@ -14,6 +14,8 @@ const parseOrigins = (value) => {
     .filter(Boolean);
 };
 
+const parsedCorsOrigins = parseOrigins(process.env.CORS_ORIGINS);
+
 const config = {
   env: process.env.NODE_ENV || 'development',
   port: Number(process.env.PORT || 5000),
@@ -23,7 +25,7 @@ const config = {
     accessExpiresIn: '30m',
     refreshExpiresIn: '7d',
   },
-  corsOrigins: parseOrigins(process.env.CORS_ORIGINS) || [
+  corsOrigins: parsedCorsOrigins.length > 0 ? parsedCorsOrigins : [
     'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:5175',

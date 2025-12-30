@@ -51,10 +51,28 @@ model Bus {
 	imageUrl         String?
 	amenities        String[]      @default([])
 	active           Boolean       @default(true)
+	approvalStatus   BusApprovalStatus @default(PENDING)
+	approvalNote     String?
+	media            BusMedia[]
 	schedules        BusSchedule[]
 	createdAt        DateTime      @default(now())
 	updatedAt        DateTime      @updatedAt
 	@@index([ownerId])
+}
+
+model BusMedia {
+	id         String    @id @default(uuid())
+	bus        Bus       @relation(fields: [busId], references: [id], onDelete: Cascade)
+	busId      String
+	fileName   String
+	mimeType   String
+	kind       MediaKind
+	data       Bytes?
+	url        String?
+	createdAt  DateTime  @default(now())
+	updatedAt  DateTime  @updatedAt
+
+	@@index([busId, kind])
 }
 
 model BusSchedule {
@@ -177,4 +195,15 @@ enum NotificationType {
 	BUS_UPDATE
 	PENALTY
 	SYSTEM
+}
+
+enum BusApprovalStatus {
+	PENDING
+	APPROVED
+	REJECTED
+}
+
+enum MediaKind {
+	IMAGE
+	VIDEO
 }

@@ -1,14 +1,53 @@
+export type BusApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
-export enum BusStatus {
-  APPROVED = 'Approved',
-  PENDING = 'Pending Approval',
-  REJECTED = 'Rejected'
+export interface OwnerSchedule {
+  id: string;
+  departureDate: string;
+  arrivalDate?: string | null;
+  origin: string;
+  destination: string;
+  availableSeats: number;
+  price: number | string;
+  status: string;
+  statusReason?: string | null;
 }
 
-export enum AvailabilityStatus {
-  AVAILABLE = 'Available',
-  BOOKED = 'Booked',
-  MAINTENANCE = 'Maintenance'
+export interface OwnerBus {
+  id: string;
+  title: string;
+  registrationNo: string;
+  capacity: number;
+  description?: string | null;
+  amenities: string[];
+  imageUrl?: string | null;
+  approvalStatus: BusApprovalStatus;
+  approvalNote?: string | null;
+  active: boolean;
+  schedules?: OwnerSchedule[];
+  createdAt?: string;
+  updatedAt?: string;
+  media?: OwnerBusMedia[];
+}
+
+export interface OwnerBusMedia {
+  id: string;
+  busId: string;
+  fileName: string;
+  mimeType: string;
+  kind: 'IMAGE' | 'VIDEO';
+  url?: string | null;
+  data?: string | null;
+}
+
+export interface OwnerProfile {
+  id: string;
+  companyName: string;
+  gstNumber?: string | null;
+  address?: string | null;
+  city?: string | null;
+  verifiedByAdmin: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export enum BookingStatus {
@@ -16,21 +55,6 @@ export enum BookingStatus {
   ONGOING = 'Ongoing',
   COMPLETED = 'Completed',
   CANCELLED = 'Cancelled'
-}
-
-export interface Bus {
-  id: string;
-  name: string;
-  regNumber: string;
-  capacity: number;
-  type: 'Normal' | 'Luxury' | 'DJ';
-  basePrice: number;
-  city: string;
-  routes: string[];
-  features: string[];
-  status: BusStatus;
-  rejectionReason?: string;
-  imageUrl: string;
 }
 
 export interface Booking {
@@ -44,17 +68,4 @@ export interface Booking {
   totalAmount: number;
   advance: number;
   balance: number;
-}
-
-export interface OwnerProfile {
-  id: string;
-  companyName: string;
-  gstNumber?: string | null;
-  address?: string | null;
-  verifiedByAdmin: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-  city?: string | null;
-  name?: string;
-  isVerified?: boolean;
 }

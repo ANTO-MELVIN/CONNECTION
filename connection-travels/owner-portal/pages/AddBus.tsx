@@ -1,11 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Upload, 
   Sparkles, 
-  MapPin, 
-  Users, 
-  CreditCard, 
   Info,
   Check,
   ChevronRight,
@@ -13,6 +10,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { generateBusDescription } from '../services/geminiService';
+import { createOwnerBus } from '../services/api';
 
 const AddBus: React.FC = () => {
   const [step, setStep] = useState(1);
@@ -27,6 +25,11 @@ const AddBus: React.FC = () => {
     description: '',
     features: [] as string[]
   });
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const videoInputRef = useRef<HTMLInputElement | null>(null);
 
   const featuresList = ['DJ System', 'LED Lights', 'AC', 'Sleeper', 'Sound System', 'TV', 'USB Charging'];
 
@@ -57,9 +60,140 @@ const AddBus: React.FC = () => {
   const nextStep = () => setStep(s => Math.min(s + 1, 3));
   const prevStep = () => setStep(s => Math.max(s - 1, 1));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    if (files.length) {
+      setImageFiles(files);
+    }
+  };
+
+  const handleVideoSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    setVideoFile(file);
+  };
+
+  const resetMediaSelection = () => {
+    setImageFiles([]);
+    setVideoFile(null);
+    if (imageInputRef.current) {
+      imageInputRef.current.value = '';
+    }
+    if (videoInputRef.current) {
+      videoInputRef.current.value = '';
+    }
+  };
+
+  const readFileAsDataUrl = (file: File) => {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          resolve(reader.result);
+        } else {
+          reject(new Error('Unable to parse file'));
+        }
+      };
+      reader.onerror = () => reject(reader.error || new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert("Bus submitted for approval!");
+    if (isSubmitting) {
+      return;
+    }
+
+    const trimmedName = formData.name.trim();
+    const trimmedRegNumber = formData.regNumber.trim();
+    const capacityValue = parseInt(formData.capacity, 10);
+
+    if (!trimmedName || !trimmedRegNumber || Number.isNaN(capacityValue) || capacityValue <= 0) {
+      alert('Please provide bus name, registration number, and a valid capacity.');
+      return;
+    }
+
+    if (imageFiles.length < 1) {
+      alert('Please upload at least one bus photo.');
+      return;
+    }
+
+    const ownerToken = localStorage.getItem('ownerToken');
+    const ownerUserRaw = localStorage.getItem('ownerUser');
+    if (!ownerToken || !ownerUserRaw) {
+      alert('Session expired. Please log in again.');
+      return;
+    }
+
+    let ownerId: string | null = null;
+    try {
+      const parsedUser = JSON.parse(ownerUserRaw);
+      ownerId = parsedUser?.ownerProfile?.id ?? null;
+    } catch (error) {
+      console.error('Failed to parse owner user payload', error);
+    }
+
+    if (!ownerId) {
+      alert('Owner profile missing. Please log in again.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const imagePayload = await Promise.all(
+        imageFiles.map(async (file) => {
+          const dataUrl = await readFileAsDataUrl(file);
+          return {
+            fileName: file.name,
+            mimeType: file.type || 'image/jpeg',
+            kind: 'IMAGE' as const,
+            data: dataUrl,
+          };
+        })
+      );
+
+      const videoPayload = videoFile
+        ? [{
+            fileName: videoFile.name,
+            mimeType: videoFile.type || 'video/mp4',
+            kind: 'VIDEO' as const,
+            data: await readFileAsDataUrl(videoFile),
+          }]
+        : [];
+
+      const payload = {
+        title: trimmedName,
+        registrationNo: trimmedRegNumber,
+        capacity: capacityValue,
+        description: formData.description.trim() || null,
+        amenities: formData.features,
+        media: [...imagePayload, ...videoPayload],
+      };
+
+      await createOwnerBus(ownerId, payload, ownerToken);
+
+      alert('Bus submitted for approval. You will be notified once reviewed.');
+
+      setFormData({
+        name: '',
+        regNumber: '',
+        capacity: '',
+        type: 'Normal',
+        price: '',
+        city: '',
+        description: '',
+        features: [],
+      });
+      resetMediaSelection();
+      setStep(1);
+    } catch (error) {
+      console.error('Failed to submit bus', error);
+      const message = error instanceof Error ? error.message : 'Unable to submit bus right now.';
+      alert(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -216,24 +350,51 @@ const AddBus: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <p className="text-sm font-semibold text-slate-700">Bus Photos (Min 3)</p>
-                <div className="border-2 border-dashed border-slate-200 rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer group">
+                <label className="border-2 border-dashed border-slate-200 rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer group">
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleImageSelect}
+                  />
                   <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 mb-4 group-hover:scale-110 transition-transform">
                     <Upload size={24} />
                   </div>
                   <p className="text-sm font-bold text-slate-700">Click to upload images</p>
                   <p className="text-xs text-slate-400 mt-1">PNG, JPG up to 10MB each</p>
-                </div>
+                  {imageFiles.length > 0 && (
+                    <ul className="mt-4 w-full text-left text-xs font-semibold text-slate-500 space-y-1">
+                      {imageFiles.map((file) => (
+                        <li key={file.name} className="truncate">{file.name}</li>
+                      ))}
+                    </ul>
+                  )}
+                </label>
               </div>
               
               <div className="space-y-3">
                 <p className="text-sm font-semibold text-slate-700">Bus Video (Optional)</p>
-                <div className="border-2 border-dashed border-slate-200 rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer group">
+                <label className="border-2 border-dashed border-slate-200 rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:bg-slate-50 transition-colors cursor-pointer group">
+                  <input
+                    ref={videoInputRef}
+                    type="file"
+                    accept="video/mp4,video/quicktime"
+                    className="hidden"
+                    onChange={handleVideoSelect}
+                  />
                   <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center text-amber-600 mb-4 group-hover:scale-110 transition-transform">
                     <Upload size={24} />
                   </div>
                   <p className="text-sm font-bold text-slate-700">Upload a virtual tour</p>
                   <p className="text-xs text-slate-400 mt-1">MP4, MOV up to 50MB</p>
-                </div>
+                  {videoFile && (
+                    <p className="mt-4 text-xs font-semibold text-slate-500 truncate w-full text-left">
+                      {videoFile.name}
+                    </p>
+                  )}
+                </label>
               </div>
             </div>
 
@@ -271,9 +432,10 @@ const AddBus: React.FC = () => {
           ) : (
             <button 
               type="submit"
-              className="px-8 py-3 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-100"
+              disabled={isSubmitting}
+              className="px-8 py-3 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-100 disabled:opacity-60"
             >
-              Submit for Approval
+              {isSubmitting ? 'Submitting...' : 'Submit for Approval'}
             </button>
           )}
         </div>

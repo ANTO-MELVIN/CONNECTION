@@ -3,22 +3,21 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const routes = require('./routes');
 const { notFoundHandler, errorHandler } = require('./middleware/error-handler');
+const config = require('./config/env');
 
 function createApp() {
 	const app = express();
 
-	app.use(cors({
-		origin: [
-			"http://localhost:5173", // admin
-			"http://localhost:5174", // owner
-			"http://localhost:5175", // user
-		],
+	const corsOptions = {
+		origin: config.corsOrigins,
 		methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 		allowedHeaders: ["Content-Type", "Authorization"],
 		credentials: true,
-	}));
+	};
 
-	app.options("*", cors());
+	app.use(cors(corsOptions));
+
+	app.options("*", cors(corsOptions));
 
 	app.use(express.json());
 	app.use(cookieParser());

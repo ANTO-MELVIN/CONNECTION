@@ -34,12 +34,32 @@ const SearchResults: React.FC = () => {
           const activeSchedule = bus.schedules?.[0];
           const isAvailable = Boolean(activeSchedule);
           const priceValue = activeSchedule?.price ?? 0;
+          const mediaItems = Array.isArray(bus.media) ? bus.media : [];
+          const resolveMediaSource = (item: any) => {
+            if (!item) {
+              return null;
+            }
+            const fallbackMime = item.kind === 'VIDEO' ? 'video/mp4' : 'image/jpeg';
+            const mime = item.mimeType || fallbackMime;
+            if (item.data) {
+              return `data:${mime};base64,${item.data}`;
+            }
+            if (item.url) {
+              return item.url;
+            }
+            return null;
+          };
+          const gallerySources = mediaItems
+            .filter((item: any) => item.kind === 'IMAGE')
+            .map(resolveMediaSource)
+            .filter(Boolean) as string[];
+          const heroImage = gallerySources[0] || resolveMediaSource(mediaItems[0]) || 'https://images.unsplash.com/photo-1529429617124-aee711907c6c?auto=format&fit=crop&w=1600&q=80';
 
           return {
             id: bus.id,
             name: bus.title,
-            image: bus.imageUrl || 'https://images.unsplash.com/photo-1529429617124-aee711907c6c?auto=format&fit=crop&w=1600&q=80',
-            gallery: bus.gallery ?? [],
+            image: heroImage,
+            gallery: gallerySources.length > 0 ? gallerySources : bus.gallery ?? [],
             capacity: bus.capacity ?? 0,
             features: (bus.amenities ?? []) as BusFeature[],
             pricePerDay: Number(priceValue) || 0,
