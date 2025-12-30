@@ -1,15 +1,12 @@
-const http = require('http');
 const config = require('./config/env');
 const createApp = require('./app');
 const { initSocket } = require('./lib/socket');
 
 const app = createApp();
-const server = http.createServer(app);
+const PORT = process.env.PORT || 8080;
+
+const server = app.listen(PORT, () => {
+  console.log('Server running on port', PORT);
+});
 
 initSocket(server, config.corsOrigins);
-
-const port = config.port;
-
-server.listen(port, () => {
-  console.log(`Backend API listening on http://localhost:${port}`);
-});
