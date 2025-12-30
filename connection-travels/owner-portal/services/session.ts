@@ -32,8 +32,6 @@ export async function ensureOwnerSession(credentials?: OwnerCredentials): Promis
 
   const loginEmail = credentials?.email?.trim().toLowerCase() || OWNER_EMAIL;
   const loginPassword = credentials?.password || OWNER_PASSWORD;
-  const mobile = credentials?.mobile;
-
   try {
     const result = await ownerLogin(loginEmail, loginPassword);
     const { accessToken, user } = result as { accessToken: string; user: any };
@@ -43,6 +41,7 @@ export async function ensureOwnerSession(credentials?: OwnerCredentials): Promis
     localStorage.removeItem('ownerToken');
     localStorage.removeItem('ownerUser');
     localStorage.removeItem('ownerProfile');
-    throw new Error('Unable to authenticate owner. Please check your credentials or try again later.');
+    const message = error instanceof Error ? error.message : 'Unable to authenticate owner. Please check your credentials or try again later.';
+    throw new Error(message);
   }
 }
