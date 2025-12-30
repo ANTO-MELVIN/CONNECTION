@@ -2,8 +2,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MOCK_BUSES, ICONS } from '../constants';
-import { BusFeature } from '../types';
+import { Bus, BusFeature } from '../types';
 import { fetchBuses } from '../src/services/api';
+
+type SearchBus = Bus & { isAvailable: boolean; statusMessage?: string | null };
+
+const mapMockBus = (bus: Bus): SearchBus => ({ ...bus, isAvailable: true });
 
 const SearchResults: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -17,7 +21,7 @@ const SearchResults: React.FC = () => {
   const [selectedFeatures, setSelectedFeatures] = useState<BusFeature[]>(initialFeature ? [initialFeature] : []);
   const [capacity, setCapacity] = useState<number>(0);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [buses, setBuses] = useState(MOCK_BUSES);
+  const [buses, setBuses] = useState<SearchBus[]>(MOCK_BUSES.map(mapMockBus));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,20 +30,39 @@ const SearchResults: React.FC = () => {
       try {
         setLoading(true);
         const list = await fetchBuses();
-        const mapped = list.map((bus: any) => ({
-          id: bus.id,
-          name: bus.title,
-          image: bus.imageUrl || 'https://images.unsplash.com/photo-1529429617124-aee711907c6c?auto=format&fit=crop&w=1600&q=80',
-          pricePerDay: Number(bus.schedules?.[0]?.price ?? 0) || 0,
-          features: bus.amenities ?? [],
-          capacity: bus.capacity,
-          rating: 4.8,
-        }));
+        const mapped: SearchBus[] = list.map((bus: any) => {
+          const activeSchedule = bus.schedules?.[0];
+          const isAvailable = Boolean(activeSchedule);
+          const priceValue = activeSchedule?.price ?? 0;
+
+          return {
+            id: bus.id,
+            name: bus.title,
+            image: bus.imageUrl || 'https://images.unsplash.com/photo-1529429617124-aee711907c6c?auto=format&fit=crop&w=1600&q=80',
+            gallery: bus.gallery ?? [],
+            capacity: bus.capacity ?? 0,
+            features: (bus.amenities ?? []) as BusFeature[],
+            pricePerDay: Number(priceValue) || 0,
+            rating: 4.8,
+            verified: true,
+            ownerContact: 'Contact on request',
+            year: 2023,
+            condition: 'Excellent',
+            description: bus.description ?? 'Premium boutique travel experience by Connection Travels.',
+            isAvailable,
+            statusMessage: isAvailable ? null : activeSchedule?.statusReason ?? 'Temporarily unavailable',
+          };
+        });
         setBuses(mapped);
+        if (!mapped.some((bus) => bus.isAvailable)) {
+          setError('All buses are currently unavailable. Please check back soon.');
+        } else {
+          setError(null);
+        }
       } catch (err) {
         console.error('Failed to load buses', err);
         setError('Unable to fetch live buses. Showing sample data.');
-        setBuses(MOCK_BUSES);
+        setBuses(MOCK_BUSES.map(mapMockBus));
       } finally {
         setLoading(false);
       }
@@ -55,12 +78,14 @@ const SearchResults: React.FC = () => {
   };
 
   const filteredBuses = useMemo(() => {
-    return buses.filter(bus => {
+    return buses
+      .filter(bus => bus.isAvailable)
+      .filter(bus => {
       const matchBudget = bus.pricePerDay <= budget;
       const matchFeatures = selectedFeatures.every(f => bus.features.includes(f));
       const matchCapacity = capacity === 0 || bus.capacity >= capacity;
       return matchBudget && matchFeatures && matchCapacity;
-    });
+      });
   }, [budget, selectedFeatures, capacity, buses]);
 
   return (

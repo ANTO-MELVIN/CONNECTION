@@ -80,6 +80,7 @@ async function upsertSchedule(ownerId, busId, data) {
         availableSeats: data.availableSeats,
         price: data.price,
         status: data.status,
+        statusReason: data.statusReason ?? null,
       },
     });
   } else {
@@ -93,6 +94,7 @@ async function upsertSchedule(ownerId, busId, data) {
         availableSeats: data.availableSeats,
         price: data.price,
         status: data.status || 'ACTIVE',
+        statusReason: data.statusReason ?? null,
       },
     });
   }
