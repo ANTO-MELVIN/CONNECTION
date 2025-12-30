@@ -2,14 +2,17 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const routes = require('./routes');
-const config = require('./config/env');
 const { notFoundHandler, errorHandler } = require('./middleware/error-handler');
 
 function createApp() {
 	const app = express();
 
 	app.use(cors({
-		origin: config.corsOrigins,
+		origin: [
+			"http://localhost:5173", // admin
+			"http://localhost:5174", // owner
+			"http://localhost:5175", // user
+		],
 		credentials: true,
 	}));
 
