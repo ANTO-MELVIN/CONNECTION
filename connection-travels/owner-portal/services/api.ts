@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL ?? 'https://connection-production-23a8.up.railway.app/api';
 
 type RequestOptions = RequestInit & { token?: string };
 
@@ -15,8 +15,17 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
   });
 
   if (!response.ok) {
-    const message = await response.text();
-    throw new Error(message || 'Request failed');
+    const raw = await response.text();
+    try {
+      const parsed = raw ? JSON.parse(raw) : {};
+      const message = typeof parsed === 'string' ? parsed : parsed.message;
+      throw new Error(message || 'Request failed');
+    } catch (parseError) {
+      if (parseError instanceof SyntaxError) {
+        throw new Error(raw || 'Request failed');
+      }
+      throw parseError;
+    }
   }
 
   return response.json() as Promise<T>;

@@ -37,7 +37,8 @@ const Login: React.FC<{ setIsLoggedIn: (val: boolean) => void }> = ({ setIsLogge
       navigate('/');
     } catch (error) {
       console.error('Owner login failed', error);
-      alert('Unable to connect to backend. Please ensure the API is running.');
+      const message = error instanceof Error ? error.message : 'Unable to connect to backend.';
+      alert(message || 'Unable to connect to backend. Please ensure the API is running.');
     } finally {
       setIsLoading(false);
     }

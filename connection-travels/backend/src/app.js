@@ -27,6 +27,14 @@ function createApp() {
 		res.json({ status: 'ok' });
 	});
 
+	app.get('/api', (req, res) => {
+		res.json({
+			name: 'Connection Travels API',
+			status: 'ok',
+			message: 'Refer to /api/auth/login (POST) and other documented endpoints.',
+		});
+	});
+
 	app.use('/api', routes);
 
 	app.use(notFoundHandler);
