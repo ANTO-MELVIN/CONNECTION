@@ -19,10 +19,11 @@ function createApp() {
 
 	app.options("*", cors(corsOptions));
 
-	app.use(express.json());
+	app.use(express.json({ limit: '25mb' }));
+	app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 	app.use(cookieParser());
 
-	app.get('/health', (req, res) => {
+	app.get('/api/health', (req, res) => {
 		res.json({ status: 'ok' });
 	});
 
