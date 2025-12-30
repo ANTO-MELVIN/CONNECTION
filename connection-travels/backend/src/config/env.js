@@ -29,6 +29,9 @@ const config = {
     'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:5175',
+    'https://connection-ownerportal.vercel.app',
+    'https://connection-adminportal.vercel.app',
+    'https://connection-userportal.vercel.app',
   ],
 };
 

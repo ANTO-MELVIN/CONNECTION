@@ -13,9 +13,7 @@ import {
   PlusCircle, 
   Bell,
   Menu,
-  X,
   ShieldCheck,
-  ChevronRight,
   Clock
 } from 'lucide-react';
 
@@ -28,9 +26,17 @@ import Earnings from '../pages/Earnings';
 import Profile from '../pages/Profile';
 import Support from '../pages/Support';
 import Login from '../pages/Login';
-import { OwnerProfile } from '../types';
+import { OwnerProfile, OwnerUser } from '../types';
 
-const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
+const Sidebar = ({
+  isOpen,
+  onClose,
+  onLogout,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onLogout: () => void;
+}) => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -50,6 +56,7 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) 
     localStorage.removeItem('ownerProfile');
     localStorage.removeItem('ownerToken');
     localStorage.removeItem('ownerUser');
+    onLogout();
     navigate('/login');
   };
 
@@ -106,7 +113,17 @@ const Sidebar = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) 
   );
 };
 
-const Header = ({ onMenuOpen, profile }: { onMenuOpen: () => void, profile: OwnerProfile | null }) => {
+const Header = ({
+  onMenuOpen,
+  profile,
+  ownerUser,
+}: {
+  onMenuOpen: () => void;
+  profile: OwnerProfile | null;
+  ownerUser: OwnerUser | null;
+}) => {
+  const ownerName = `${ownerUser?.firstName || ''} ${ownerUser?.lastName || ''}`.trim();
+  const avatarFallback = (ownerName || ownerUser?.email || profile?.companyName || 'T').charAt(0).toUpperCase();
   return (
     <header className="h-16 bg-white border-b border-slate-200 sticky top-0 z-30 px-4 flex items-center justify-between lg:px-8">
       <div className="flex items-center gap-4">
@@ -114,7 +131,7 @@ const Header = ({ onMenuOpen, profile }: { onMenuOpen: () => void, profile: Owne
           <Menu size={24} />
         </button>
         <div className="hidden lg:block">
-          <h1 className="text-lg font-semibold text-slate-800">Welcome Back, {profile?.name?.split(' ')[0] || 'Travel Owner'}</h1>
+          <h1 className="text-lg font-semibold text-slate-800">Welcome Back, {ownerName || ownerUser?.email?.split('@')[0] || profile?.companyName || 'Travel Owner'}</h1>
           <p className="text-xs text-slate-500">Manage your fleet and bookings with ease</p>
         </div>
       </div>
@@ -126,7 +143,7 @@ const Header = ({ onMenuOpen, profile }: { onMenuOpen: () => void, profile: Owne
         </button>
         <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
           <div className="text-right hidden sm:block">
-            <p className="text-sm font-medium text-slate-700 leading-none">{profile?.companyName || 'Travel Agency'}</p>
+            <p className="text-sm font-medium text-slate-700 leading-none">{profile?.companyName || ownerName || 'Travel Agency'}</p>
             {profile?.verifiedByAdmin ? (
               <p className="text-[10px] text-green-600 flex items-center justify-end gap-1 mt-1">
                 <ShieldCheck size={10} /> Verified
@@ -138,7 +155,7 @@ const Header = ({ onMenuOpen, profile }: { onMenuOpen: () => void, profile: Owne
             )}
           </div>
           <div className="w-9 h-9 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold uppercase">
-            {profile?.name?.charAt(0) || 'T'}
+            {avatarFallback}
           </div>
         </div>
       </div>
@@ -150,6 +167,7 @@ const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [profile, setProfile] = useState<OwnerProfile | null>(null);
+  const [ownerUser, setOwnerUser] = useState<OwnerUser | null>(null);
 
   useEffect(() => {
     const loggedIn = localStorage.getItem('isLoggedIn') === 'true';
@@ -157,8 +175,16 @@ const App: React.FC = () => {
     
     if (loggedIn) {
       const storedProfile = localStorage.getItem('ownerProfile');
+      const storedUser = localStorage.getItem('ownerUser');
       if (storedProfile) {
         setProfile(JSON.parse(storedProfile));
+      }
+      if (storedUser) {
+        try {
+          setOwnerUser(JSON.parse(storedUser));
+        } catch (error) {
+          console.error('Failed to parse owner user from storage', error);
+        }
       }
     }
   }, [isLoggedIn]);
@@ -173,9 +199,17 @@ const App: React.FC = () => {
             element={
               isLoggedIn ? (
                 <div className="flex">
-                  <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+                  <Sidebar
+                    isOpen={isSidebarOpen}
+                    onClose={() => setIsSidebarOpen(false)}
+                    onLogout={() => {
+                      setIsLoggedIn(false);
+                      setProfile(null);
+                      setOwnerUser(null);
+                    }}
+                  />
                   <main className="flex-1 lg:ml-64 min-h-screen">
-                    <Header onMenuOpen={() => setIsSidebarOpen(true)} profile={profile} />
+                    <Header onMenuOpen={() => setIsSidebarOpen(true)} profile={profile} ownerUser={ownerUser} />
                     <div className="p-4 lg:p-8 max-w-7xl mx-auto">
                       <Routes>
                         <Route path="/" element={<Dashboard />} />
@@ -184,7 +218,7 @@ const App: React.FC = () => {
                         <Route path="/availability" element={<Availability />} />
                         <Route path="/bookings" element={<Bookings />} />
                         <Route path="/earnings" element={<Earnings />} />
-                        <Route path="/profile" element={<Profile />} />
+                        <Route path="/profile" element={<Profile profile={profile} ownerUser={ownerUser} />} />
                         <Route path="/support" element={<Support />} />
                       </Routes>
                     </div>

@@ -50,6 +50,15 @@ export interface OwnerProfile {
   updatedAt?: string;
 }
 
+export interface OwnerUser {
+  id: string;
+  email: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  phone?: string | null;
+  ownerProfile?: OwnerProfile | null;
+}
+
 export enum BookingStatus {
   UPCOMING = 'Upcoming',
   ONGOING = 'Ongoing',

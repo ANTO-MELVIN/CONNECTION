@@ -3,28 +3,6 @@ import { ownerLogin } from './api';
 const OWNER_EMAIL = import.meta.env.VITE_OWNER_EMAIL ?? 'owner@connectiontravels.com';
 const OWNER_PASSWORD = import.meta.env.VITE_OWNER_PASSWORD ?? 'Owner@123';
 
-const DUMMY_TOKEN = 'dummy-owner-token';
-
-function createDummyUser(email?: string, mobile?: string) {
-  const safeEmail = email?.trim().toLowerCase() || 'owner-demo@connectiontravels.com';
-  const safeMobile = mobile?.trim() || '9487868172';
-  return {
-    id: 'dummy-owner',
-    email: safeEmail,
-    firstName: 'Demo',
-    lastName: 'Owner',
-    role: 'OWNER',
-    phone: safeMobile,
-    ownerProfile: {
-      id: 'dummy-owner-profile',
-      userId: 'dummy-owner',
-      companyName: 'Demo Travels',
-      city: 'Bengaluru',
-      verifiedByAdmin: true,
-    },
-  };
-}
-
 function persistSession(session: OwnerSession) {
   localStorage.setItem('ownerToken', session.token);
   localStorage.setItem('ownerUser', JSON.stringify(session.user));
@@ -61,7 +39,10 @@ export async function ensureOwnerSession(credentials?: OwnerCredentials): Promis
     const { accessToken, user } = result as { accessToken: string; user: any };
     return persistSession({ token: accessToken, user });
   } catch (error) {
-    const dummySession = { token: DUMMY_TOKEN, user: createDummyUser(loginEmail, mobile) };
-    return persistSession(dummySession);
+    console.error('Owner authentication failed', error);
+    localStorage.removeItem('ownerToken');
+    localStorage.removeItem('ownerUser');
+    localStorage.removeItem('ownerProfile');
+    throw new Error('Unable to authenticate owner. Please check your credentials or try again later.');
   }
 }

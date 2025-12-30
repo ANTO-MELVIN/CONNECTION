@@ -13,17 +13,48 @@ import {
   AlertCircle,
   Clock
 } from 'lucide-react';
-import { OwnerProfile } from '../types';
+import { OwnerProfile, OwnerUser } from '../types';
 
-const Profile: React.FC = () => {
-  const [profile, setProfile] = useState<OwnerProfile | null>(null);
+interface ProfileProps {
+  profile: OwnerProfile | null;
+  ownerUser: OwnerUser | null;
+}
+
+const Profile: React.FC<ProfileProps> = ({ profile: initialProfile, ownerUser: initialOwnerUser }) => {
+  const [profile, setProfile] = useState<OwnerProfile | null>(initialProfile);
+  const [ownerUser, setOwnerUser] = useState<OwnerUser | null>(initialOwnerUser);
 
   useEffect(() => {
-    const stored = localStorage.getItem('ownerProfile');
-    if (stored) {
-      setProfile(JSON.parse(stored));
+    if (initialProfile) {
+      setProfile(initialProfile);
+    } else {
+      const stored = localStorage.getItem('ownerProfile');
+      if (stored) {
+        setProfile(JSON.parse(stored));
+      }
     }
-  }, []);
+  }, [initialProfile]);
+
+  useEffect(() => {
+    if (initialOwnerUser) {
+      setOwnerUser(initialOwnerUser);
+    } else {
+      const storedUser = localStorage.getItem('ownerUser');
+      if (storedUser) {
+        try {
+          setOwnerUser(JSON.parse(storedUser));
+        } catch (error) {
+          console.error('Failed to parse owner user from storage', error);
+        }
+      }
+    }
+  }, [initialOwnerUser]);
+
+  const ownerName = `${ownerUser?.firstName || ''} ${ownerUser?.lastName || ''}`.trim();
+  const ownerEmail = ownerUser?.email;
+  const ownerPhone = ownerUser?.phone;
+  const isVerified = profile?.verifiedByAdmin ?? false;
+  const avatarLetter = (ownerName || ownerEmail || profile?.companyName || 'S').charAt(0).toUpperCase();
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
@@ -37,10 +68,10 @@ const Profile: React.FC = () => {
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col items-center text-center">
             <div className="relative mb-4">
               <div className="w-24 h-24 bg-indigo-600 rounded-full flex items-center justify-center text-white text-3xl font-black uppercase">
-                {profile?.name?.charAt(0) || 'S'}
+                {avatarLetter}
               </div>
-              <div className={`absolute bottom-0 right-0 w-8 h-8 rounded-full border-4 border-white flex items-center justify-center text-white ${profile?.isVerified ? 'bg-green-500' : 'bg-amber-500'}`}>
-                {profile?.isVerified ? <ShieldCheck size={16} /> : <Clock size={16} />}
+              <div className={`absolute bottom-0 right-0 w-8 h-8 rounded-full border-4 border-white flex items-center justify-center text-white ${isVerified ? 'bg-green-500' : 'bg-amber-500'}`}>
+                {isVerified ? <ShieldCheck size={16} /> : <Clock size={16} />}
               </div>
             </div>
             <h3 className="text-xl font-bold text-slate-800">{profile?.companyName || 'SRS Travels'}</h3>
@@ -48,13 +79,13 @@ const Profile: React.FC = () => {
             
             <div className="w-full mt-6 space-y-3 pt-6 border-t border-slate-50">
               <div className="flex items-center gap-3 text-sm text-slate-600">
-                <User size={16} className="text-slate-400" /> {profile?.name || 'Santosh R. Sharma'}
+                <User size={16} className="text-slate-400" /> {ownerName || ownerEmail || 'Santosh R. Sharma'}
               </div>
               <div className="flex items-center gap-3 text-sm text-slate-600">
-                <Phone size={16} className="text-slate-400" /> {profile?.mobile || '+91 98765 43210'}
+                <Phone size={16} className="text-slate-400" /> {ownerPhone || '+91 98765 43210'}
               </div>
               <div className="flex items-center gap-3 text-sm text-slate-600">
-                <Mail size={16} className="text-slate-400" /> {profile?.email || 'contact@srstravels.com'}
+                <Mail size={16} className="text-slate-400" /> {ownerEmail || 'contact@srstravels.com'}
               </div>
               <div className="flex items-center gap-3 text-sm text-slate-600">
                 <MapPin size={16} className="text-slate-400" /> {profile?.city || 'Bangalore'}, India
@@ -90,7 +121,7 @@ const Profile: React.FC = () => {
           
           <div className="p-6 space-y-6">
             {[
-              { label: 'Aadhar Card / PAN', status: profile?.isVerified ? 'Verified' : 'Pending', date: profile?.isVerified ? 'Jan 20, 2024' : 'Just now', icon: <User size={20} /> },
+              { label: 'Aadhar Card / PAN', status: isVerified ? 'Verified' : 'Pending', date: isVerified ? 'Jan 20, 2024' : 'Just now', icon: <User size={20} /> },
               { label: 'Business Registration (GST)', status: 'Not Uploaded', date: '-', icon: <Building2 size={20} /> },
               { label: 'Insurance Policy', status: 'Not Uploaded', date: '-', icon: <ShieldCheck size={20} /> },
               { label: 'Bus RC Documents', status: 'Not Uploaded', date: '-', icon: <FileText size={20} /> },
@@ -129,7 +160,7 @@ const Profile: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-4 bg-white rounded-xl border border-slate-200">
                 <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Account Holder</p>
-                <p className="text-sm font-semibold text-slate-700">{profile?.name || 'SANTOSH SHARMA'}</p>
+                <p className="text-sm font-semibold text-slate-700">{ownerName || ownerEmail || 'SANTOSH SHARMA'}</p>
               </div>
               <div className="p-4 bg-white rounded-xl border border-slate-200">
                 <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Status</p>

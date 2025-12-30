@@ -7,9 +7,12 @@ import {
   TrendingUp,
   AlertCircle,
   CheckCircle2,
-  XCircle,
   ChevronRight,
-  MapPin
+  MapPin,
+  Mail,
+  Phone,
+  Fingerprint,
+  Building2
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -20,7 +23,7 @@ import {
   Tooltip, 
   ResponsiveContainer 
 } from 'recharts';
-import { OwnerProfile } from '../types';
+import { OwnerProfile, OwnerUser } from '../types';
 import { ensureOwnerSession } from '../services/session';
 import { fetchOwnerBuses } from '../services/api';
 
@@ -54,18 +57,28 @@ const StatCard = ({ icon, label, value, color, trend }: any) => (
 const Dashboard: React.FC = () => {
   const [profile, setProfile] = useState<OwnerProfile | null>(null);
   const [busCount, setBusCount] = useState(0);
+  const [ownerUser, setOwnerUser] = useState<OwnerUser | null>(null);
 
   useEffect(() => {
     async function hydrate() {
       const session = await ensureOwnerSession();
       const ownerProfile = session.user.ownerProfile as OwnerProfile;
       setProfile(ownerProfile);
+      setOwnerUser(session.user as OwnerUser);
       const buses = await fetchOwnerBuses(ownerProfile.id, session.token);
       setBusCount(buses.length);
     }
 
     hydrate();
   }, []);
+
+  const ownerName = [ownerUser?.firstName, ownerUser?.lastName].filter(Boolean).join(' ').trim();
+  const ownerDisplayName = ownerName || ownerUser?.email?.split('@')[0] || profile?.companyName || 'Travel Owner';
+  const isVerified = profile?.verifiedByAdmin ?? false;
+  const statusChipClass = isVerified
+    ? 'text-green-600 bg-green-50 border border-green-100'
+    : 'text-amber-600 bg-amber-50 border border-amber-100';
+  const statusLabel = isVerified ? 'Verified' : 'Pending Review';
 
   return (
     <div className="space-y-8">
@@ -121,6 +134,65 @@ const Dashboard: React.FC = () => {
         />
       </div>
 
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Owner Login</p>
+            <h2 className="text-lg font-bold text-slate-800">Account Credentials</h2>
+            <p className="text-sm text-slate-500 font-medium mt-1">Signed in as {ownerDisplayName}</p>
+          </div>
+          <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-[0.2em] ${statusChipClass}`}>
+            {statusLabel}
+          </span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+            <div className="p-3 bg-white rounded-xl border border-slate-200 text-indigo-600">
+              <Building2 size={18} />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Company</p>
+              <p className="text-sm font-semibold text-slate-700">
+                {profile?.companyName || 'Travel Agency'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+            <div className="p-3 bg-white rounded-xl border border-slate-200 text-indigo-600">
+              <Mail size={18} />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Login Email</p>
+              <p className="text-sm font-semibold text-slate-700 break-all">
+                {ownerUser?.email || 'owner@connectiontravels.com'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+            <div className="p-3 bg-white rounded-xl border border-slate-200 text-indigo-600">
+              <Phone size={18} />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Contact Number</p>
+              <p className="text-sm font-semibold text-slate-700">
+                {ownerUser?.phone || '+91 00000 00000'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+            <div className="p-3 bg-white rounded-xl border border-slate-200 text-indigo-600">
+              <Fingerprint size={18} />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Account ID</p>
+              <p className="text-sm font-semibold text-slate-700 break-all">
+                {ownerUser?.id || 'Not assigned'}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Earnings Chart */}
         <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
@@ -157,7 +229,7 @@ const Dashboard: React.FC = () => {
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
           <h2 className="text-lg font-bold text-slate-800 mb-6">Alerts for {profile?.city || 'Your Area'}</h2>
           <div className="space-y-4">
-            {!profile?.isVerified && (
+            {!profile?.verifiedByAdmin && (
               <div className="flex gap-4 p-4 rounded-xl bg-amber-50 border border-amber-100">
                 <div className="text-amber-600 shrink-0">
                   <AlertCircle size={20} />
