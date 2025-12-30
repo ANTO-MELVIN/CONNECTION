@@ -13,8 +13,12 @@ function createApp() {
 			"http://localhost:5174", // owner
 			"http://localhost:5175", // user
 		],
+		methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+		allowedHeaders: ["Content-Type", "Authorization"],
 		credentials: true,
 	}));
+
+	app.options("*", cors());
 
 	app.use(express.json());
 	app.use(cookieParser());
