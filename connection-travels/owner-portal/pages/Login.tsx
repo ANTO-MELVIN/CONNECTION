@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bus, Smartphone, Mail, Building2, User, MapPin, Loader2, ArrowRight, CheckCircle2, Star, ShieldCheck, HeartHandshake } from 'lucide-react';
+import { Bus, Smartphone, Mail, Building2, User, MapPin, Loader2, ArrowRight, CheckCircle2, Star, ShieldCheck, HeartHandshake, Lock } from 'lucide-react';
 import { ensureOwnerSession } from '../services/session';
 
 const Login: React.FC<{ setIsLoggedIn: (val: boolean) => void }> = ({ setIsLoggedIn }) => {
@@ -16,12 +16,19 @@ const Login: React.FC<{ setIsLoggedIn: (val: boolean) => void }> = ({ setIsLogge
     city: ''
   });
 
+  const [loginEmail, setLoginEmail] = useState('owner@connectiontravels.com');
+  const [loginPassword, setLoginPassword] = useState('Owner@123');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const session = await ensureOwnerSession();
+      const session = await ensureOwnerSession({
+        email: isRegistering ? undefined : loginEmail,
+        password: isRegistering ? undefined : loginPassword,
+        mobile: isRegistering ? regData.mobile : undefined,
+      });
       localStorage.setItem('isLoggedIn', 'true');
       if (session.user.ownerProfile) {
         localStorage.setItem('ownerProfile', JSON.stringify(session.user.ownerProfile));
@@ -97,7 +104,7 @@ const Login: React.FC<{ setIsLoggedIn: (val: boolean) => void }> = ({ setIsLogge
               {isRegistering ? 'Owner Registration' : 'Partner Login'}
             </h2>
             <p className="text-slate-500 font-medium">
-              {isRegistering ? 'Submit your agency details for verification' : 'Welcome back, enter your mobile to start'}
+              {isRegistering ? 'Submit your agency details for verification' : 'Welcome back, enter your email and password to continue'}
             </p>
           </div>
 
@@ -172,10 +179,31 @@ const Login: React.FC<{ setIsLoggedIn: (val: boolean) => void }> = ({ setIsLogge
             ) : (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Registered Mobile Number</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Registered Email Address</label>
                   <div className="relative group">
-                    <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 transition-colors group-focus-within:text-indigo-600" size={18} />
-                    <input required type="tel" className="w-full pl-12 pr-4 py-5 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all text-base font-black text-slate-800 tracking-wider" placeholder="98765 43210" />
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 transition-colors group-focus-within:text-indigo-600" size={18} />
+                    <input
+                      required
+                      type="email"
+                      className="w-full pl-12 pr-4 py-5 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all text-base font-semibold text-slate-800"
+                      placeholder="owner@connectiontravels.com"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Account Password</label>
+                  <div className="relative group">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 transition-colors group-focus-within:text-indigo-600" size={18} />
+                    <input
+                      required
+                      type="password"
+                      className="w-full pl-12 pr-4 py-5 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all text-base font-semibold text-slate-800"
+                      placeholder="••••••••"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                    />
                   </div>
                 </div>
                 <div className="flex items-center gap-2 px-2">
@@ -183,7 +211,7 @@ const Login: React.FC<{ setIsLoggedIn: (val: boolean) => void }> = ({ setIsLogge
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
                   </span>
-                  <p className="text-[10px] text-slate-400 font-bold tracking-widest uppercase">Secured via OTP</p>
+                  <p className="text-[10px] text-slate-400 font-bold tracking-widest uppercase">Secured credential login</p>
                 </div>
               </div>
             )}
