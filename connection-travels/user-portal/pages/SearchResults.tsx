@@ -5,9 +5,9 @@ import { MOCK_BUSES, ICONS } from '../constants';
 import { Bus, BusFeature } from '../types';
 import { fetchBuses } from '../src/services/api';
 
-type SearchBus = Bus & { isAvailable: boolean; statusMessage?: string | null };
+type SearchBus = Bus & { isAvailable: boolean; statusMessage?: string | null; tags: string[] };
 
-const mapMockBus = (bus: Bus): SearchBus => ({ ...bus, isAvailable: true });
+const mapMockBus = (bus: Bus): SearchBus => ({ ...bus, isAvailable: true, tags: ['Available', 'Verified bus', 'Matches your budget'] });
 
 const SearchResults: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -31,9 +31,7 @@ const SearchResults: React.FC = () => {
         setLoading(true);
         const list = await fetchBuses();
         const mapped: SearchBus[] = list.map((bus: any) => {
-          const activeSchedule = bus.schedules?.[0];
-          const isAvailable = Boolean(activeSchedule);
-          const priceValue = activeSchedule?.price ?? 0;
+          const isAvailable = bus.active ?? true;
           const mediaItems = Array.isArray(bus.media) ? bus.media : [];
           const resolveMediaSource = (item: any) => {
             if (!item) {
@@ -62,7 +60,6 @@ const SearchResults: React.FC = () => {
             gallery: gallerySources.length > 0 ? gallerySources : bus.gallery ?? [],
             capacity: bus.capacity ?? 0,
             features: (bus.amenities ?? []) as BusFeature[],
-            pricePerDay: Number(priceValue) || 0,
             rating: 4.8,
             verified: true,
             ownerContact: 'Contact on request',
@@ -70,7 +67,12 @@ const SearchResults: React.FC = () => {
             condition: 'Excellent',
             description: bus.description ?? 'Premium boutique travel experience by Connection Travels.',
             isAvailable,
-            statusMessage: isAvailable ? null : activeSchedule?.statusReason ?? 'Temporarily unavailable',
+            statusMessage: isAvailable ? null : 'Temporarily unavailable',
+            tags: [
+              isAvailable ? 'Available' : 'Currently reviewing',
+              'Matches your budget',
+              'Verified bus',
+            ],
           };
         });
         setBuses(mapped);
@@ -99,12 +101,11 @@ const SearchResults: React.FC = () => {
 
   const filteredBuses = useMemo(() => {
     return buses
-      .filter(bus => bus.isAvailable)
-      .filter(bus => {
-      const matchBudget = bus.pricePerDay <= budget;
+        .filter(bus => bus.isAvailable)
+        .filter(bus => {
       const matchFeatures = selectedFeatures.every(f => bus.features.includes(f));
       const matchCapacity = capacity === 0 || bus.capacity >= capacity;
-      return matchBudget && matchFeatures && matchCapacity;
+        return matchFeatures && matchCapacity;
       });
   }, [budget, selectedFeatures, capacity, buses]);
 
@@ -133,7 +134,7 @@ const SearchResults: React.FC = () => {
             </h2>
             <div className="bg-white p-6 md:p-8 rounded-[2rem] border shadow-sm space-y-8">
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-6">Max Budget (₹)</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-6">Budget Range (₹)</label>
                 <input 
                   type="range" 
                   min="30000" 
@@ -145,7 +146,7 @@ const SearchResults: React.FC = () => {
                 />
                 <div className="flex justify-between mt-4 font-bold text-slate-700 text-sm">
                   <span>₹30k</span>
-                  <span className="text-blue-600 bg-blue-50 px-3 py-1 rounded-lg">₹{budget.toLocaleString()}</span>
+                  <span className="text-blue-600 bg-blue-50 px-3 py-1 rounded-lg">Up to ₹{budget.toLocaleString()}</span>
                 </div>
               </div>
 
@@ -244,14 +245,13 @@ const SearchResults: React.FC = () => {
                         <h3 className="text-xl font-bold text-slate-900 truncate group-hover:text-blue-600 transition-colors">
                           {bus.name}
                         </h3>
-                        <div className="flex items-center gap-1 mt-1.5 font-bold text-slate-400 text-xs">
-                          <ICONS.Star />
-                          <span>{bus.rating} / 5</span>
+                        <div className="flex flex-wrap items-center gap-2 mt-2">
+                          {bus.tags.map((tag) => (
+                            <span key={tag} className="text-[9px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-100">
+                              {tag}
+                            </span>
+                          ))}
                         </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-2xl font-black text-slate-900">₹{bus.pricePerDay.toLocaleString()}</p>
-                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mt-0.5">All Inclusive</p>
                       </div>
                     </div>
 
@@ -264,7 +264,7 @@ const SearchResults: React.FC = () => {
                     </div>
 
                     <button className="w-full bg-slate-50 text-slate-900 group-hover:bg-blue-600 group-hover:text-white font-black py-4 rounded-2xl transition-all duration-300 uppercase tracking-[0.2em] text-[10px] shadow-sm">
-                      View Experience
+                      View Details
                     </button>
                   </div>
                 </div>

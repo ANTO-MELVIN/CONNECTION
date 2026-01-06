@@ -14,13 +14,15 @@ import {
   Bell,
   Menu,
   ShieldCheck,
-  Clock
+  Clock,
+  IndianRupee
 } from 'lucide-react';
 
 import Dashboard from '../pages/Dashboard';
 import MyBuses from '../pages/MyBuses';
 import AddBus from '../pages/AddBus';
 import Availability from '../pages/Availability';
+import BusPricing from '../pages/BusPricing';
 import Bookings from '../pages/Bookings';
 import Earnings from '../pages/Earnings';
 import Profile from '../pages/Profile';
@@ -45,6 +47,7 @@ const Sidebar = ({
     { name: 'My Buses', path: '/buses', icon: <BusIcon size={20} /> },
     { name: 'Add New Bus', path: '/add-bus', icon: <PlusCircle size={20} /> },
     { name: 'Availability', path: '/availability', icon: <Calendar size={20} /> },
+    { name: 'Bus Pricing', path: '/pricing', icon: <IndianRupee size={20} /> },
     { name: 'Bookings', path: '/bookings', icon: <BookText size={20} /> },
     { name: 'Earnings', path: '/earnings', icon: <Wallet size={20} /> },
     { name: 'Profile', path: '/profile', icon: <UserCircle size={20} /> },
@@ -216,6 +219,7 @@ const App: React.FC = () => {
                         <Route path="/buses" element={<MyBuses />} />
                         <Route path="/add-bus" element={<AddBus />} />
                         <Route path="/availability" element={<Availability />} />
+                        <Route path="/pricing" element={<BusPricing />} />
                         <Route path="/bookings" element={<Bookings />} />
                         <Route path="/earnings" element={<Earnings />} />
                         <Route path="/profile" element={<Profile profile={profile} ownerUser={ownerUser} />} />

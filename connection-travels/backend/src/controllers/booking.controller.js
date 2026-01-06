@@ -18,7 +18,18 @@ async function listUserBookings(req, res, next) {
   }
 }
 
+async function getUserBooking(req, res, next) {
+  try {
+    const { bookingId } = req.params;
+    const booking = await bookingService.getBookingForUser(req.user.id, bookingId);
+    res.json(booking);
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   createBooking,
   listUserBookings,
+  getUserBooking,
 };

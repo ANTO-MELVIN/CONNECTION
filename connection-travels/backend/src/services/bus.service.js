@@ -71,9 +71,6 @@ async function listActiveBuses() {
           },
         },
       },
-      schedules: {
-        where: { status: 'ACTIVE' },
-      },
       media: true,
     },
   });
@@ -83,7 +80,7 @@ async function listActiveBuses() {
 async function getOwnerBuses(ownerId) {
   const buses = await prisma.bus.findMany({
     where: { ownerId },
-    include: { schedules: true, media: true },
+    include: { media: true, pricing: true },
     orderBy: { createdAt: 'desc' },
   });
   return buses.map(formatBus);
@@ -113,7 +110,7 @@ async function createBus(ownerId, payload) {
 
   const hydratedBus = await prisma.bus.findUnique({
     where: { id: bus.id },
-    include: { media: true, schedules: true },
+    include: { media: true, pricing: true },
   });
 
   const formattedBus = formatBus(hydratedBus);
@@ -180,7 +177,7 @@ async function updateBus(ownerId, busId, payload) {
   if (Object.keys(data).length === 0) {
     const unchangedBus = await prisma.bus.findUnique({
       where: { id: busId },
-      include: { schedules: true, media: true },
+      include: { media: true, pricing: true },
     });
     return formatBus(unchangedBus);
   }
@@ -188,7 +185,7 @@ async function updateBus(ownerId, busId, payload) {
   const bus = await prisma.bus.update({
     where: { id: busId },
     data,
-    include: { schedules: true, media: true },
+    include: { media: true, pricing: true },
   });
 
   if (Array.isArray(payload.media) && payload.media.length > 0) {
@@ -211,53 +208,72 @@ async function updateBus(ownerId, busId, payload) {
   return formattedBus;
 }
 
-async function upsertSchedule(ownerId, busId, data) {
-  let schedule;
-  if (data.id) {
-    schedule = await prisma.busSchedule.update({
-      where: { id: data.id },
-      data: {
-        departureDate: new Date(data.departureDate),
-        arrivalDate: data.arrivalDate ? new Date(data.arrivalDate) : null,
-        origin: data.origin,
-        destination: data.destination,
-        availableSeats: data.availableSeats,
-        price: data.price,
-        status: data.status,
-        statusReason: data.statusReason ?? null,
-      },
-    });
-  } else {
-    schedule = await prisma.busSchedule.create({
-      data: {
-        busId,
-        departureDate: new Date(data.departureDate),
-        arrivalDate: data.arrivalDate ? new Date(data.arrivalDate) : null,
-        origin: data.origin,
-        destination: data.destination,
-        availableSeats: data.availableSeats,
-        price: data.price,
-        status: data.status || 'ACTIVE',
-        statusReason: data.statusReason ?? null,
-      },
-    });
+async function updateExpectedPrice(ownerId, busId, expectedPrice, note) {
+  if (expectedPrice == null) {
+    const error = new Error('expectedPrice is required');
+    error.status = 400;
+    throw error;
   }
 
-  const bus = await prisma.bus.findUnique({
+  const numericPrice = typeof expectedPrice === 'number' ? expectedPrice : Number(expectedPrice);
+  if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
+    const error = new Error('Expected price must be a positive number');
+    error.status = 400;
+    throw error;
+  }
+
+  const bus = await prisma.bus.findFirst({
+    where: { id: busId, ownerId },
+    include: {
+      owner: true,
+      pricing: true,
+    },
+  });
+
+  if (!bus) {
+    const error = new Error('Bus not found for owner');
+    error.status = 404;
+    throw error;
+  }
+
+  const expectedPriceValue = numericPrice.toFixed(2);
+
+  const pricing = await prisma.busPrice.upsert({
+    where: { busId },
+    update: {
+      expectedPrice: expectedPriceValue,
+      lastUpdatedAt: new Date(),
+    },
+    create: {
+      busId,
+      expectedPrice: expectedPriceValue,
+      lastUpdatedAt: new Date(),
+    },
+  });
+
+  await prisma.auditLog.create({
+    data: {
+      actorId: bus.owner?.userId ?? null,
+      action: 'BUS_EXPECTED_PRICE_UPDATED',
+      entity: 'Bus',
+      entityId: busId,
+      payload: {
+        expectedPrice: expectedPriceValue,
+        note: note ?? null,
+      },
+    },
+  });
+
+  const hydratedBus = await prisma.bus.findUnique({
     where: { id: busId },
-    include: { schedules: true, media: true },
+    include: { media: true, pricing: true },
   });
 
-  broadcastBusUpdate(ownerId, formatBus(bus));
+  const formattedBus = formatBus(hydratedBus);
 
-  return schedule;
-}
+  broadcastBusUpdate(ownerId, formattedBus);
 
-async function getBusSchedules(busId) {
-  return prisma.busSchedule.findMany({
-    where: { busId, status: 'ACTIVE' },
-    orderBy: { departureDate: 'asc' },
-  });
+  return pricing;
 }
 
 function broadcastBusUpdate(ownerId, bus) {
@@ -273,6 +289,5 @@ module.exports = {
   getOwnerBuses,
   createBus,
   updateBus,
-  upsertSchedule,
-  getBusSchedules,
+  updateExpectedPrice,
 };

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bus, Smartphone, Mail, Building2, User, MapPin, Loader2, ArrowRight, CheckCircle2, Star, ShieldCheck, HeartHandshake, Lock } from 'lucide-react';
 import { ensureOwnerSession } from '../services/session';
+import { registerOwner } from '../services/api';
 
 const Login: React.FC<{ setIsLoggedIn: (val: boolean) => void }> = ({ setIsLoggedIn }) => {
   const [isRegistering, setIsRegistering] = useState(false);
@@ -24,10 +25,40 @@ const Login: React.FC<{ setIsLoggedIn: (val: boolean) => void }> = ({ setIsLogge
     setIsLoading(true);
 
     try {
+      if (isRegistering) {
+        const trimmedName = regData.name.trim();
+        const [firstName, ...rest] = trimmedName.split(/\s+/);
+        const payload = {
+          email: loginEmail,
+          password: loginPassword,
+          firstName: firstName || 'Owner',
+          lastName: rest.join(' ') || 'Partner',
+          phone: regData.mobile,
+          companyName: regData.companyName,
+          address: regData.city,
+        };
+
+        try {
+          await registerOwner(payload);
+        } catch (registerError) {
+          if (
+            registerError instanceof Error &&
+            /Failed to fetch|NetworkError|Unable to connect/i.test(registerError.message)
+          ) {
+            console.warn('Owner registration fell back to offline mode');
+          } else {
+            throw registerError;
+          }
+        }
+      }
+
       const session = await ensureOwnerSession({
-        email: isRegistering ? undefined : loginEmail,
-        password: isRegistering ? undefined : loginPassword,
-        mobile: isRegistering ? regData.mobile : undefined,
+        email: loginEmail,
+        password: loginPassword,
+        mobile: regData.mobile,
+        name: regData.name,
+        companyName: regData.companyName,
+        city: regData.city,
       });
       localStorage.setItem('isLoggedIn', 'true');
       if (session.user.ownerProfile) {
@@ -142,6 +173,37 @@ const Login: React.FC<{ setIsLoggedIn: (val: boolean) => void }> = ({ setIsLogge
                   </div>
                 </div>
                 
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Registered Email Address</label>
+                    <div className="relative group">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 transition-colors group-focus-within:text-indigo-600" size={18} />
+                      <input 
+                        required 
+                        type="email"
+                        className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all text-sm font-semibold text-slate-700 placeholder:text-slate-300" 
+                        placeholder="owner@connectiontravels.com"
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Create Password</label>
+                    <div className="relative group">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 transition-colors group-focus-within:text-indigo-600" size={18} />
+                      <input 
+                        required 
+                        type="password"
+                        className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 transition-all text-sm font-semibold text-slate-700 placeholder:text-slate-300" 
+                        placeholder="Strong password"
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] ml-1">Agency / Travels Name</label>
                   <div className="relative group">

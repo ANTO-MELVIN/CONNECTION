@@ -1,17 +1,5 @@
 export type BusApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
-export interface OwnerSchedule {
-  id: string;
-  departureDate: string;
-  arrivalDate?: string | null;
-  origin: string;
-  destination: string;
-  availableSeats: number;
-  price: number | string;
-  status: string;
-  statusReason?: string | null;
-}
-
 export interface OwnerBus {
   id: string;
   title: string;
@@ -23,10 +11,15 @@ export interface OwnerBus {
   approvalStatus: BusApprovalStatus;
   approvalNote?: string | null;
   active: boolean;
-  schedules?: OwnerSchedule[];
+  pricing?: OwnerBusPricing | null;
   createdAt?: string;
   updatedAt?: string;
   media?: OwnerBusMedia[];
+}
+
+export interface OwnerBusPricing {
+  expectedPrice: string;
+  lastUpdatedAt?: string;
 }
 
 export interface OwnerBusMedia {
@@ -59,22 +52,23 @@ export interface OwnerUser {
   ownerProfile?: OwnerProfile | null;
 }
 
-export enum BookingStatus {
-  UPCOMING = 'Upcoming',
-  ONGOING = 'Ongoing',
-  COMPLETED = 'Completed',
-  CANCELLED = 'Cancelled'
-}
-
-export interface Booking {
+export interface OwnerBooking {
   id: string;
-  busId: string;
-  customerName: string;
-  pickup: string;
-  drop: string;
-  dates: string[];
-  status: BookingStatus;
-  totalAmount: number;
-  advance: number;
-  balance: number;
+  status: string;
+  ownerPayoutPrice?: string | number | null;
+  ownerPayoutLockedAt?: string | null;
+  travelDetails?: Record<string, any> | null;
+  packageSelections?: any;
+  adminNotes?: string | null;
+  ownerConfirmationAt?: string | null;
+  createdAt: string;
+  updatedAt?: string;
+  bus: {
+    id: string;
+    title: string;
+    capacity: number;
+    amenities: string[];
+    media?: OwnerBusMedia[];
+    pricing?: OwnerBusPricing | null;
+  };
 }

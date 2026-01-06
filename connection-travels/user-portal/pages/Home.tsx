@@ -150,12 +150,9 @@ const Home: React.FC = () => {
                   ))}
                 </div>
                 <div className="flex items-center justify-between pt-8 border-t border-slate-50 mt-auto">
-                  <div>
-                    <p className="text-[10px] text-slate-400 uppercase font-black tracking-[0.2em] mb-1">From</p>
-                    <p className="text-3xl font-black text-slate-900">₹{bus.pricePerDay.toLocaleString()}</p>
-                  </div>
+                  <p className="text-xs text-slate-500 max-w-[220px]">Final price depends on your itinerary and selected packages. Admin assists you end-to-end.</p>
                   <button className="bg-slate-900 text-white px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-blue-600 transition-all shadow-lg group-hover:shadow-xl transform group-hover:-translate-y-1">
-                    Details
+                    View Bus
                   </button>
                 </div>
               </div>

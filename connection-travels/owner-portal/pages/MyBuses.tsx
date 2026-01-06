@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import type { OwnerBus, OwnerProfile, BusApprovalStatus } from '../types';
-import { Edit2, Eye, Calendar, Settings, Plus, MapPin } from 'lucide-react';
+import { Edit2, Eye, Calendar, Plus, MapPin, IndianRupee, ShieldAlert } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { fetchOwnerBuses } from '../services/api';
 import { ensureOwnerSession } from '../services/session';
+import { fetchOwnerBuses } from '../services/api';
 
 const MyBuses: React.FC = () => {
   const [buses, setBuses] = useState<OwnerBus[]>([]);
   const [profile, setProfile] = useState<OwnerProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [recentSubmission, setRecentSubmission] = useState<{ id: string; title?: string } | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -31,9 +32,22 @@ const MyBuses: React.FC = () => {
     load();
   }, []);
 
+  useEffect(() => {
+    const stored = localStorage.getItem('ownerLastSubmittedBus');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as { id: string; title?: string };
+        setRecentSubmission(parsed);
+      } catch (error) {
+        console.error('Failed to parse recent submission metadata', error);
+      }
+      localStorage.removeItem('ownerLastSubmittedBus');
+    }
+  }, []);
+
   const statusLabelMap: Record<BusApprovalStatus, string> = useMemo(() => ({
     APPROVED: 'Approved',
-    PENDING: 'Pending Approval',
+    PENDING: 'Waiting for Admin Verification',
     REJECTED: 'Rejected',
   }), []);
 
@@ -45,6 +59,8 @@ const MyBuses: React.FC = () => {
       default: return 'bg-slate-100 text-slate-700';
     }
   };
+
+  const pendingCount = useMemo(() => buses.filter((bus) => bus.approvalStatus === 'PENDING').length, [buses]);
 
   return (
     <div className="space-y-6">
@@ -63,6 +79,13 @@ const MyBuses: React.FC = () => {
           <Plus size={20} /> Add New Bus
         </Link>
       </div>
+
+      {pendingCount > 0 && (
+        <div className="bg-amber-50 border border-amber-100 text-amber-700 rounded-2xl p-4 flex items-center gap-3 text-sm font-semibold">
+          <ShieldAlert size={18} />
+          {pendingCount === 1 ? '1 bus is waiting for admin verification.' : `${pendingCount} buses are waiting for admin verification.`}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading && (
@@ -85,6 +108,7 @@ const MyBuses: React.FC = () => {
             : primaryMedia?.url
             ? primaryMedia.url
             : bus.imageUrl || 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1200&q=80';
+          const isRecentlySubmitted = recentSubmission?.id === bus.id;
           return (
           <div key={bus.id} className="bg-white rounded-[2rem] overflow-hidden shadow-sm border border-slate-100 hover:shadow-xl transition-all group">
             <div className="relative h-56 overflow-hidden">
@@ -94,6 +118,11 @@ const MyBuses: React.FC = () => {
                   {statusLabel}
                 </span>
               </div>
+              {isRecentlySubmitted && (
+                <div className="absolute top-5 right-5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-full shadow-lg">
+                  Submitted Now
+                </div>
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
                 <div className="flex gap-3 w-full">
                   <button className="flex-1 bg-white text-slate-900 py-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-indigo-50 transition-colors">
@@ -123,6 +152,13 @@ const MyBuses: React.FC = () => {
                   <p className="text-[9px] text-slate-400 uppercase tracking-widest font-black mb-1">Status</p>
                   <p className="text-sm font-bold text-slate-700">{bus.active ? 'Live' : 'Offline'}</p>
                 </div>
+                <div className="bg-slate-50 p-3 rounded-2xl col-span-2">
+                  <p className="text-[9px] text-slate-400 uppercase tracking-widest font-black mb-1">Expected payout shared</p>
+                  <div className="flex items-center gap-2 text-sm font-bold text-slate-700">
+                    <IndianRupee size={16} className="text-slate-400" />
+                    {bus.pricing?.expectedPrice ? Number(bus.pricing.expectedPrice).toLocaleString('en-IN', { maximumFractionDigits: 0 }) : 'Not set'}
+                  </div>
+                </div>
               </div>
 
               {status === 'REJECTED' && bus.approvalNote && (
@@ -136,9 +172,9 @@ const MyBuses: React.FC = () => {
                 <Link to="/availability" className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-indigo-50 text-indigo-600 text-xs font-black uppercase tracking-widest hover:bg-indigo-100 transition-all">
                   <Calendar size={16} /> Availability
                 </Link>
-                <button className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-50 text-slate-600 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-all">
-                  <Settings size={16} /> Features
-                </button>
+                <Link to="/pricing" className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-900 text-white text-xs font-black uppercase tracking-widest hover:bg-indigo-600 transition-all">
+                  <IndianRupee size={16} /> Pricing
+                </Link>
               </div>
             </div>
           </div>

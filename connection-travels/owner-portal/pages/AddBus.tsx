@@ -1,5 +1,6 @@
 
 import React, { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Upload, 
   Sparkles, 
@@ -11,8 +12,10 @@ import {
 } from 'lucide-react';
 import { generateBusDescription } from '../services/geminiService';
 import { createOwnerBus } from '../services/api';
+import type { OwnerBus } from '../types';
 
 const AddBus: React.FC = () => {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [formData, setFormData] = useState({
@@ -28,6 +31,7 @@ const AddBus: React.FC = () => {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submittedBus, setSubmittedBus] = useState<OwnerBus | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const videoInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -171,9 +175,15 @@ const AddBus: React.FC = () => {
         media: [...imagePayload, ...videoPayload],
       };
 
-      await createOwnerBus(ownerId, payload, ownerToken);
+      const newlyCreated = await createOwnerBus(ownerId, payload, ownerToken) as OwnerBus;
 
-      alert('Bus submitted for approval. You will be notified once reviewed.');
+      const recentSubmission = {
+        id: newlyCreated.id,
+        title: newlyCreated.title,
+      };
+      localStorage.setItem('ownerLastSubmittedBus', JSON.stringify(recentSubmission));
+
+      setSubmittedBus(newlyCreated);
 
       setFormData({
         name: '',
@@ -195,6 +205,51 @@ const AddBus: React.FC = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (submittedBus) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 sm:px-0">
+        <div className="bg-white border border-slate-100 rounded-3xl p-8 sm:p-10 shadow-sm text-center space-y-6">
+          <div className="w-16 h-16 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
+            <Check size={28} />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-slate-800">Bus submitted for review</h1>
+            <p className="text-slate-500 text-sm leading-relaxed">
+              {submittedBus.title || 'Your bus'} is now awaiting admin verification. You will receive a confirmation once the review team approves it.
+            </p>
+          </div>
+          <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-6 text-left space-y-3">
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-indigo-500">Submission Timeline</p>
+            <ul className="text-sm text-indigo-900 space-y-2">
+              <li>• Status updated to <span className="font-semibold">Waiting for Admin Verification</span>.</li>
+              <li>• Buses remain hidden from travellers until approved.</li>
+              <li>• Average review time: 12-24 working hours.</li>
+            </ul>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              type="button"
+              onClick={() => navigate('/buses')}
+              className="px-6 py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 transition-all"
+            >
+              View Manage Fleet
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSubmittedBus(null);
+                navigate('/add-bus');
+              }}
+              className="px-6 py-3 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 transition-all"
+            >
+              Add Another Bus
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-0">

@@ -1,18 +1,29 @@
-const API_URL = import.meta.env.VITE_API_URL ?? 'https://connection-production-23a8.up.railway.app/api';
+const PROD_API = 'https://connection-production-23a8.up.railway.app/api';
+
+const API_URL = import.meta.env.VITE_API_URL ?? PROD_API;
 
 type RequestOptions = RequestInit & { token?: string };
 
 async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    method: options.method ?? 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
-      ...options.headers,
-    },
-    credentials: 'include',
-    body: options.body,
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_URL}${endpoint}`, {
+      method: options.method ?? 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
+        ...options.headers,
+      },
+      credentials: 'include',
+      body: options.body,
+    });
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error('Unable to connect to the owner API. Please ensure the backend server is running.');
+    }
+    throw error;
+  }
 
   if (!response.ok) {
     const raw = await response.text();
@@ -65,9 +76,9 @@ export function updateOwnerBus(ownerId: string, busId: string, payload: unknown,
   });
 }
 
-export function upsertSchedule(ownerId: string, busId: string, payload: unknown, token: string) {
-  return request(`/owners/${ownerId}/buses/${busId}/schedules`, {
-    method: 'PUT',
+export function updateExpectedPrice(ownerId: string, busId: string, payload: { expectedPrice: number | string; note?: string | null }, token: string) {
+  return request(`/owners/${ownerId}/buses/${busId}/price`, {
+    method: 'PATCH',
     body: JSON.stringify(payload),
     token,
   });

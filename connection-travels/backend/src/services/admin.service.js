@@ -1,4 +1,5 @@
 const prisma = require('../lib/prisma');
+const bookingService = require('./booking.service');
 const { emitToOwners, emitToAdmins, emitToUsers } = require('../lib/socket');
 
 function formatMedia(media) {
@@ -25,6 +26,7 @@ function formatBus(bus) {
   return {
     ...bus,
     media: Array.isArray(bus.media) ? bus.media.map(formatMedia) : [],
+    pricing: bus.pricing ?? null,
   };
 }
 
@@ -82,6 +84,7 @@ async function listPendingBuses() {
         },
       },
       media: true,
+      pricing: true,
     },
     orderBy: { createdAt: 'desc' },
   });
@@ -108,8 +111,8 @@ async function approveBus(busId, approvedByUserId, note) {
           },
         },
       },
-      schedules: true,
       media: true,
+      pricing: true,
     },
   });
 
@@ -152,8 +155,8 @@ async function rejectBus(busId, rejectedByUserId, note) {
           },
         },
       },
-      schedules: true,
       media: true,
+      pricing: true,
     },
   });
 
@@ -176,10 +179,30 @@ async function rejectBus(busId, rejectedByUserId, note) {
   return formattedBus;
 }
 
+async function listQuoteRequests() {
+  return bookingService.listQuoteRequests();
+}
+
+async function updateQuoteNegotiation(bookingId, adminId, payload) {
+  return bookingService.adminUpdateNegotiation(bookingId, adminId, payload);
+}
+
+async function lockOwnerPayout(bookingId, adminId, ownerPayoutPrice) {
+  return bookingService.lockOwnerPayout(bookingId, adminId, ownerPayoutPrice);
+}
+
+async function lockUserPrice(bookingId, adminId, userFinalPrice) {
+  return bookingService.lockUserPrice(bookingId, adminId, userFinalPrice);
+}
+
 module.exports = {
   approveOwner,
   getDashboardSummary,
   listPendingBuses,
   approveBus,
   rejectBus,
+  listQuoteRequests,
+  updateQuoteNegotiation,
+  lockOwnerPayout,
+  lockUserPrice,
 };

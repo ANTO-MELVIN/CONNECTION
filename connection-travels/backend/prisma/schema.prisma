@@ -54,7 +54,7 @@ model Bus {
 	approvalStatus   BusApprovalStatus @default(PENDING)
 	approvalNote     String?
 	media            BusMedia[]
-	schedules        BusSchedule[]
+	pricing          BusPrice?
 	createdAt        DateTime      @default(now())
 	updatedAt        DateTime      @updatedAt
 	@@index([ownerId])
@@ -75,42 +75,40 @@ model BusMedia {
 	@@index([busId, kind])
 }
 
-model BusSchedule {
+model Booking {
 	id             String        @id @default(uuid())
 	bus            Bus           @relation(fields: [busId], references: [id])
 	busId          String
-	departureDate  DateTime
-	arrivalDate    DateTime?
-	origin         String
-	destination    String
-	availableSeats Int
-	price          Decimal       @db.Decimal(10, 2)
-	status         ScheduleStatus
-	statusReason   String?
-	bookings       Booking[]
-	createdAt      DateTime      @default(now())
-	updatedAt      DateTime      @updatedAt
-	@@index([busId, departureDate])
-}
-
-model Booking {
-	id             String        @id @default(uuid())
-	user           User          @relation(fields: [userId], references: [id])
-	userId         String
-	schedule       BusSchedule   @relation(fields: [scheduleId], references: [id])
-	scheduleId     String
 	owner          OwnerProfile  @relation("OwnerBooking", fields: [ownerId], references: [id])
 	ownerId        String
-	seatsBooked    Int
-	totalAmount    Decimal       @db.Decimal(10, 2)
-	status         BookingStatus @default(PENDING)
+	user           User          @relation(fields: [userId], references: [id])
+	userId         String
+	status         BookingStatus @default(QUOTE_REQUESTED)
+	ownerPayoutPrice Decimal?    @db.Decimal(10, 2)
+	userFinalPrice Decimal?      @db.Decimal(10, 2)
+	ownerPayoutLockedAt DateTime?
+	userPriceLockedAt DateTime?
+	travelDetails  Json
+	packageSelections Json?
+	adminNotes     String?
+	userNotes      String?
+	ownerConfirmationAt DateTime?
+	userConfirmationAt DateTime?
 	payment        Payment?
 	penalties      Penalty[]
 	createdAt      DateTime      @default(now())
 	updatedAt      DateTime      @updatedAt
-	@@index([userId])
-	@@index([scheduleId])
+	@@index([busId])
 	@@index([ownerId])
+	@@index([userId])
+}
+
+model BusPrice {
+	id             String   @id @default(uuid())
+	bus            Bus      @relation(fields: [busId], references: [id], onDelete: Cascade)
+	busId          String   @unique
+	expectedPrice  Decimal  @db.Decimal(10, 2)
+	lastUpdatedAt  DateTime @default(now())
 }
 
 model Payment {
@@ -168,16 +166,11 @@ enum UserRole {
 	CUSTOMER
 }
 
-enum ScheduleStatus {
-	ACTIVE
-	SOLD_OUT
-	CANCELLED
-	MAINTENANCE
-	BLOCKED
-}
-
 enum BookingStatus {
-	PENDING
+	QUOTE_REQUESTED
+	ADMIN_REVIEWING
+	PRICE_FINALIZED
+	AWAITING_PAYMENT
 	CONFIRMED
 	CANCELLED
 	COMPLETED

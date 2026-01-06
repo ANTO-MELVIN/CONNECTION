@@ -50,10 +50,65 @@ async function rejectBus(req, res, next) {
   }
 }
 
+async function listQuoteRequests(req, res, next) {
+  try {
+    const quotes = await adminService.listQuoteRequests();
+    res.json(quotes);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function updateQuoteNegotiation(req, res, next) {
+  try {
+    const { bookingId } = req.params;
+    const updated = await adminService.updateQuoteNegotiation(bookingId, req.user.id, req.body ?? {});
+    res.json(updated);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function lockOwnerPayout(req, res, next) {
+  try {
+    const { bookingId } = req.params;
+    const { ownerPayoutPrice } = req.body ?? {};
+    if (ownerPayoutPrice == null) {
+      const err = new Error('ownerPayoutPrice required');
+      err.status = 400;
+      throw err;
+    }
+    const updated = await adminService.lockOwnerPayout(bookingId, req.user.id, ownerPayoutPrice);
+    res.json(updated);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function lockUserPrice(req, res, next) {
+  try {
+    const { bookingId } = req.params;
+    const { userFinalPrice } = req.body ?? {};
+    if (userFinalPrice == null) {
+      const err = new Error('userFinalPrice required');
+      err.status = 400;
+      throw err;
+    }
+    const updated = await adminService.lockUserPrice(bookingId, req.user.id, userFinalPrice);
+    res.json(updated);
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   approveOwner,
   getSummary,
   listPendingBuses,
   approveBus,
   rejectBus,
+  listQuoteRequests,
+  updateQuoteNegotiation,
+  lockOwnerPayout,
+  lockUserPrice,
 };

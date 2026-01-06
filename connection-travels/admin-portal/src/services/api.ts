@@ -1,6 +1,8 @@
 import type { AppUser, DashboardSummary, OwnerProfile, AdminPendingBus } from '../types';
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'https://connection-production-23a8.up.railway.app/api';
+const PROD_API = 'https://connection-production-23a8.up.railway.app/api';
+
+const API_URL = import.meta.env.VITE_API_URL ?? PROD_API;
 
 async function request<T>(input: RequestInfo, init?: RequestInit): Promise<T> {
   const response = await fetch(input, {

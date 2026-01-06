@@ -162,9 +162,11 @@ const BusApprovalCenter: React.FC = () => {
         >
           <ArrowLeft size={20} />
         </button>
-        <div>
-          <h2 className="text-2xl font-bold text-slate-800">Connection Approval Center</h2>
-          <p className="text-slate-500">Review new fleet submissions before they go live.</p>
+        <div
+          className={`fixed inset-y-0 right-0 w-full sm:w-[420px] lg:w-[520px] bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-slate-200 ${
+            selectedBus ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
         </div>
       </header>
 
@@ -291,7 +293,9 @@ const BusApprovalCenter: React.FC = () => {
 
       {/* Detail Slide-Over */}
       <div
-        className={ixed inset-y-0 right-0 w-full sm:w-[420px] lg:w-[520px] bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-slate-200 }
+        className={`fixed inset-y-0 right-0 w-full sm:w-[420px] lg:w-[520px] bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-slate-200 ${
+          selectedBus ? 'translate-x-0' : 'translate-x-full'
+        }`}
       >
         {selectedBus && (
           <div className="h-full flex flex-col">

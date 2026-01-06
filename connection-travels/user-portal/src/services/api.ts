@@ -1,8 +1,19 @@
-const API_URL = import.meta.env.VITE_API_URL ?? 'https://connection-production-23a8.up.railway.app/api';
+const PROD_API = 'https://connection-production-23a8.up.railway.app/api';
 
-interface BookingPayload {
-  scheduleId: string;
-  seatsRequested: number;
+const API_URL = import.meta.env.VITE_API_URL ?? PROD_API;
+
+export interface QuotePayload {
+  busId: string;
+  pickupLocation: string;
+  dropLocations?: string[];
+  startDate: string;
+  endDate?: string;
+  numberOfDays?: number;
+  passengers: number;
+  packages?: Array<string | { name: string; included: boolean }>;
+  eventType?: string;
+  specialInstructions?: string;
+  notes?: string;
 }
 
 type RequestOptions = RequestInit & { token?: string };
@@ -47,11 +58,7 @@ export function fetchBuses() {
   return request('/buses');
 }
 
-export function fetchBusSchedules(busId: string) {
-  return request(`/buses/${busId}/schedules`);
-}
-
-export function createBooking(payload: BookingPayload, token: string) {
+export function requestQuote(payload: QuotePayload, token: string) {
   return request('/bookings', {
     method: 'POST',
     body: JSON.stringify(payload),
@@ -61,4 +68,8 @@ export function createBooking(payload: BookingPayload, token: string) {
 
 export function fetchUserBookings(token: string) {
   return request('/bookings', { token });
+}
+
+export function fetchBookingById(bookingId: string, token: string) {
+  return request(`/bookings/${bookingId}`, { token });
 }
