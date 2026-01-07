@@ -54,6 +54,7 @@ model Bus {
 	approvalStatus   BusApprovalStatus @default(PENDING)
 	approvalNote     String?
 	media            BusMedia[]
+	bookings         Booking[]
 	pricing          BusPrice?
 	createdAt        DateTime      @default(now())
 	updatedAt        DateTime      @updatedAt
